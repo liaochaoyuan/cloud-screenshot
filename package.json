@@ -1,0 +1,12 @@
+{
+  "name": "cloud-screenshot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "云端长截图服务 - 基于 GitHub Actions + Playwright",
+  "scripts": {
+    "shot": "node screenshot.js"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}
