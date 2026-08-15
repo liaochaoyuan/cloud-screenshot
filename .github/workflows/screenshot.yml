@@ -1,0 +1,74 @@
+name: 云端长截图 (Cloud Screenshot)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: '要截图的网址 (含 http:// 或 https://)'
+        required: true
+        default: 'https://example.com'
+      format:
+        description: '图片格式'
+        required: true
+        default: 'jpg'
+        type: choice
+        options:
+          - jpg
+          - png
+          - webp
+      mode:
+        description: '截图模式'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full      # 整页长截图
+          - viewport  # 仅当前视口
+      width:
+        description: '视口宽度 (像素)'
+        required: true
+        default: '1280'
+      wait:
+        description: '页面加载后额外等待 (毫秒)'
+        required: true
+        default: '1500'
+
+permissions:
+  contents: write   # 允许把截图提交回仓库
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装 Playwright 与 Chromium
+        run: |
+          npm install playwright@1.48.0
+          npx playwright install --with-deps chromium
+
+      - name: 执行截图
+        env:
+          URL: ${{ github.event.inputs.url }}
+          FORMAT: ${{ github.event.inputs.format }}
+          MODE: ${{ github.event.inputs.mode }}
+          WIDTH: ${{ github.event.inputs.width }}
+          WAIT: ${{ github.event.inputs.wait }}
+        run: node screenshot.js
+
+      - name: 把截图提交回仓库 (供网页展示)
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "github-actions[bot]"
+          mkdir -p shots
+          cp output/screenshot.* "shots/latest.${{ github.event.inputs.format }}" 2>/dev/null || true
+          git add shots/
+          git commit -m "screenshot: ${{ github.event.inputs.url }}" || echo "无变化，跳过提交"
+          git push origin HEAD:main
